@@ -93,12 +93,8 @@ class StickerWidget(Widget):
             self._drag_origin = (self.sticker.position.x, self.sticker.position.y)
         self.capture_mouse()
 
-    def on_mouse_move(self, event: MouseMove) -> None:
-        if self._drag_start is None:
-            return
-        event.stop()
-        dx = event.screen_x - self._drag_start[0]
-        dy = event.screen_y - self._drag_start[1]
+    def _apply_drag(self, dx: int, dy: int) -> None:
+        """드래그 델타를 적용하여 리사이즈 또는 이동 상태를 업데이트."""
         if self._resizing:
             new_w = max(self.MIN_WIDTH, self._drag_origin[0] + dx)
             new_h = max(self.MIN_HEIGHT, self._drag_origin[1] + dy)
@@ -113,23 +109,19 @@ class StickerWidget(Widget):
             self.sticker.position.y = new_y
             self.styles.offset = (new_x, new_y)
 
+    def on_mouse_move(self, event: MouseMove) -> None:
+        if self._drag_start is None:
+            return
+        event.stop()
+        dx = event.screen_x - self._drag_start[0]
+        dy = event.screen_y - self._drag_start[1]
+        self._apply_drag(dx, dy)
+
     def on_mouse_up(self, event: MouseUp) -> None:
         if self._drag_start is not None:
             dx = event.screen_x - self._drag_start[0]
             dy = event.screen_y - self._drag_start[1]
-            if self._resizing:
-                new_w = max(self.MIN_WIDTH, self._drag_origin[0] + dx)
-                new_h = max(self.MIN_HEIGHT, self._drag_origin[1] + dy)
-                self.sticker.size.width = new_w
-                self.sticker.size.height = new_h
-                self.styles.width = new_w
-                self.styles.height = new_h
-            else:
-                new_x = max(0, self._drag_origin[0] + dx)
-                new_y = max(0, self._drag_origin[1] + dy)
-                self.sticker.position.x = new_x
-                self.sticker.position.y = new_y
-                self.styles.offset = (new_x, new_y)
+            self._apply_drag(dx, dy)
             self._drag_start = None
             self.release_mouse()
             board = self.app.query_one("StickerBoard")
