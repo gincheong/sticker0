@@ -7,7 +7,7 @@ from sticker0.sticker import StickerColor, BorderType
 
 def test_defaults_when_no_file(tmp_path):
     config = AppConfig.load(path=tmp_path / ".stkrc")
-    assert config.theme.default_color == StickerColor.YELLOW
+    assert config.theme.default_color == StickerColor.NONE
     assert config.border.border_type == BorderType.ROUNDED
     assert config.defaults.width == 30
     assert config.defaults.height == 10

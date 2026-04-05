@@ -14,6 +14,7 @@ class StickerColor(str, Enum):
     PINK = "pink"
     WHITE = "white"
     DARK = "dark"
+    NONE = "none"
 
 
 class BorderType(str, Enum):
@@ -41,7 +42,7 @@ class Sticker:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     title: str = ""
     content: str = ""
-    color: StickerColor = StickerColor.YELLOW
+    color: StickerColor = StickerColor.NONE
     border: BorderType = BorderType.ROUNDED
     position: StickerPosition = field(default_factory=StickerPosition)
     size: StickerSize = field(default_factory=StickerSize)
@@ -72,7 +73,7 @@ class Sticker:
             id=data.get("id", str(uuid.uuid4())),
             title=data.get("title", ""),
             content=data.get("content", ""),
-            color=StickerColor(data.get("color", "yellow")),
+            color=StickerColor(data.get("color", "none")),
             border=BorderType(data.get("border", "rounded")),
             position=StickerPosition(**data.get("position", {})),
             size=StickerSize(**data.get("size", {})),

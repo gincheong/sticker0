@@ -7,6 +7,7 @@ from textual.message import Message
 from sticker0.sticker import StickerColor
 
 COLOR_LABELS: dict[StickerColor, str] = {
+    StickerColor.NONE:   "⬜ 투명 (기본)",
     StickerColor.YELLOW: "🟡 노랑",
     StickerColor.BLUE:   "🔵 파랑",
     StickerColor.GREEN:  "🟢 초록",

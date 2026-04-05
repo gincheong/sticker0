@@ -6,7 +6,7 @@ def test_sticker_defaults():
     s = Sticker()
     assert s.title == ""
     assert s.content == ""
-    assert s.color == StickerColor.YELLOW
+    assert s.color == StickerColor.NONE
     assert s.border == BorderType.ROUNDED
     assert s.position.x == 0
     assert s.position.y == 0
@@ -23,6 +23,21 @@ def test_sticker_roundtrip():
     assert s2.title == "Test"
     assert s2.content == "Hello"
     assert s2.color == StickerColor.BLUE
+
+
+def test_sticker_color_none_roundtrip():
+    from sticker0.sticker import StickerColor
+    s = Sticker(color=StickerColor.NONE)
+    d = s.to_dict()
+    assert d["color"] == "none"
+    s2 = Sticker.from_dict(d)
+    assert s2.color == StickerColor.NONE
+
+
+def test_new_sticker_default_color_is_none():
+    from sticker0.sticker import StickerColor
+    s = Sticker()
+    assert s.color == StickerColor.NONE
 
 
 def test_sticker_touch_updates_timestamp():

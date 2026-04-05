@@ -10,7 +10,7 @@ CONFIG_PATH = Path.home() / ".stkrc"
 
 @dataclass
 class ThemeConfig:
-    default_color: StickerColor = StickerColor.YELLOW
+    default_color: StickerColor = StickerColor.NONE
 
 
 @dataclass
