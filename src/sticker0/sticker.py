@@ -4,6 +4,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 
 class StickerColor(str, Enum):
@@ -51,7 +52,7 @@ class Sticker:
         default_factory=lambda: datetime.now(timezone.utc)
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "title": self.title,
@@ -65,17 +66,18 @@ class Sticker:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> Sticker:
+    def from_dict(cls, data: dict[str, Any]) -> Sticker:
+        now = datetime.now(timezone.utc).isoformat()
         return cls(
-            id=data["id"],
+            id=data.get("id", str(uuid.uuid4())),
             title=data.get("title", ""),
             content=data.get("content", ""),
             color=StickerColor(data.get("color", "yellow")),
             border=BorderType(data.get("border", "rounded")),
             position=StickerPosition(**data.get("position", {})),
             size=StickerSize(**data.get("size", {})),
-            created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=datetime.fromisoformat(data["updated_at"]),
+            created_at=datetime.fromisoformat(data.get("created_at", now)),
+            updated_at=datetime.fromisoformat(data.get("updated_at", now)),
         )
 
     def touch(self) -> None:
