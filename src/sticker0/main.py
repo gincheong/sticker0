@@ -1,10 +1,10 @@
 # src/sticker0/main.py
 from __future__ import annotations
 
+from sticker0.app import Sticker0App
+
 
 def main() -> None:
-    from sticker0.app import Sticker0App
-
     app = Sticker0App()
     app.run()
 
