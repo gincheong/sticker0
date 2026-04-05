@@ -3,7 +3,7 @@ from __future__ import annotations
 from textual.widget import Widget
 from textual.app import ComposeResult
 from sticker0.config import AppConfig
-from sticker0.sticker import Sticker
+from sticker0.sticker import Sticker, StickerSize
 from sticker0.storage import StickerStorage
 from sticker0.widgets.sticker_widget import StickerWidget
 
@@ -38,7 +38,24 @@ class StickerBoard(Widget):
         self.storage.save(sticker)
 
     def add_new_sticker(self) -> None:
-        sticker = Sticker()
+        cfg = self.config
+        sticker = Sticker(
+            color=cfg.theme.default_color,
+            border=cfg.border.border_type,
+            size=StickerSize(
+                width=cfg.defaults.width,
+                height=cfg.defaults.height,
+            ),
+        )
+        # 화면 중앙 배치
+        try:
+            screen = self.screen
+            center_x = max(0, (screen.size.width - sticker.size.width) // 2)
+            center_y = max(0, (screen.size.height - sticker.size.height) // 2)
+            sticker.position.x = center_x
+            sticker.position.y = center_y
+        except Exception:
+            pass
         self.storage.save(sticker)
         self.mount(StickerWidget(sticker))
 
