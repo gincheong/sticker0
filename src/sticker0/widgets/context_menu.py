@@ -61,9 +61,8 @@ class ContextMenu(Widget):
         if self._minimized:
             yield Button("Expand", id="menu-restore")
         else:
-            yield Button("Edit", id="menu-edit")
             yield Button("Minimize", id="menu-minimize")
-        yield Button("Change Preset", id="menu-preset")
+        yield Button("Color", id="menu-preset")
         yield Button("Delete", id="menu-delete", variant="error")
         yield Button("Close", id="menu-close")
 
@@ -73,7 +72,6 @@ class ContextMenu(Widget):
             self.remove()
             return
         action_map = {
-            "menu-edit": "edit",
             "menu-delete": "delete",
             "menu-preset": "preset",
             "menu-minimize": "minimize",

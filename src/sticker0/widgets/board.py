@@ -119,10 +119,6 @@ class StickerBoard(Widget):
     def on_context_menu_menu_action(self, message) -> None:
         if message.action == "delete":
             self.delete_sticker(message.sticker_id)
-        elif message.action == "edit":
-            for widget in self.query(StickerWidget):
-                if widget.sticker.id == message.sticker_id:
-                    widget._enter_edit_mode()
         elif message.action == "preset":
             from sticker0.widgets.preset_picker import PresetPicker
             self.close_all_menus()
