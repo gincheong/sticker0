@@ -14,9 +14,7 @@ class BoardMenu(Widget):
         position: absolute;
         width: 24;
         height: auto;
-        border: round $accent;
         background: $surface;
-        color: $text;
         layer: menu;
     }
     BoardMenu Button {
@@ -24,7 +22,6 @@ class BoardMenu(Widget):
         height: 1;
         border: none;
         background: transparent;
-        color: $text;
     }
     BoardMenu Button:hover {
         background: $accent 20%;
@@ -38,13 +35,22 @@ class BoardMenu(Widget):
             self.x = x
             self.y = y
 
-    def __init__(self, x: int, y: int, **kwargs) -> None:
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        indicator: str = "white",
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
         self._menu_x = x
         self._menu_y = y
+        self._indicator = indicator
 
     def on_mount(self) -> None:
         self.styles.offset = (self._menu_x, self._menu_y)
+        self.styles.border = ("round", self._indicator)
+        self.styles.color = self._indicator
 
     def compose(self) -> ComposeResult:
         yield Button("✨ Create", id="board-create")
