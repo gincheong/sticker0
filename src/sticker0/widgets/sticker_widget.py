@@ -154,7 +154,11 @@ class StickerWidget(Widget):
 
     def compose(self) -> ComposeResult:
         editor_id = f"sticker-editor-{self.sticker.id}"
-        yield StickerTextArea(self.sticker.content, id=editor_id)
+        yield StickerTextArea(
+            self.sticker.content,
+            id=editor_id,
+            highlight_cursor_line=False,
+        )
 
     def _get_editor(self) -> TextArea:
         return self.query_one(f"#sticker-editor-{self.sticker.id}", TextArea)
