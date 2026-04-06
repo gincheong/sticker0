@@ -9,6 +9,9 @@ __pycache__/
 .venv/
 .env
 
+# uv (optional lockfile; not tracked in this repo)
+uv.lock
+
 # pytest / coverage
 .pytest_cache/
 .coverage
