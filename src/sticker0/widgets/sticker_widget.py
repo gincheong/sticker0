@@ -24,6 +24,8 @@ _DRAG_MOVE = "move"
 _DRAG_RESIZE_RIGHT = "resize_right"
 _DRAG_RESIZE_LEFT = "resize_left"
 _DRAG_RESIZE_H = "resize_h"
+_DRAG_RESIZE_CORNER_BL = "resize_corner_bl"
+_DRAG_RESIZE_CORNER_BR = "resize_corner_br"
 
 DOUBLE_CLICK_INTERVAL = 0.4
 
@@ -55,7 +57,7 @@ class StickerWidget(Widget):
         super().__init__(**kwargs)
         self.sticker = sticker
         self._drag_start: tuple[int, int] | None = None
-        self._drag_origin: tuple[int, int] = (0, 0)
+        self._drag_origin: tuple[int, ...] = (0, 0)
         self._drag_mode: str = _DRAG_MOVE
         self._last_top_click: float = 0.0
 
@@ -131,18 +133,42 @@ class StickerWidget(Widget):
         return self.query_one(f"#sticker-editor-{self.sticker.id}", TextArea)
 
     def _classify_border(self, x: int, y: int) -> str | None:
+        """테두리 영역 분류.
+
+        - y==0: 이동(상단 줄).
+        - 첫 줄 제외: 좌·우 2열씩 가로 리사이즈, 맨 아래 줄은 세로 리사이즈.
+        - 아래 모서리 (왼쪽 2열∩아래줄 / 오른쪽 2열∩아래줄): 가로+세로 동시.
+        """
         w = self.outer_size.width
         h = self.outer_size.height
         if y == 0:
             return _DRAG_MOVE
         if self.sticker.minimized:
             return None  # 최소화 상태에서 리사이즈 불가
-        if x == 0:
-            return _DRAG_RESIZE_LEFT
-        if x == w - 1:
-            return _DRAG_RESIZE_RIGHT
+        if h < 2:
+            return None
+
+        in_left = x <= 1
+        in_right = x >= w - 2
+
+        # 맨 아래 줄: 모서리는 대각(가로+세로), 가운데는 세로만
         if y == h - 1:
+            if in_left and in_right:
+                # w가 작을 때 아래줄에서 좌·우 2열이 겹침 → 더 가까운 모서리
+                if x - 0 <= (w - 1) - x:
+                    return _DRAG_RESIZE_CORNER_BL
+                return _DRAG_RESIZE_CORNER_BR
+            if in_left:
+                return _DRAG_RESIZE_CORNER_BL
+            if in_right:
+                return _DRAG_RESIZE_CORNER_BR
             return _DRAG_RESIZE_H
+
+        # 첫 줄 제외, 마지막 줄 제외: 좌·우 2열 가로만
+        if in_left:
+            return _DRAG_RESIZE_LEFT
+        if in_right:
+            return _DRAG_RESIZE_RIGHT
         return None
 
     def _move_to_front(self) -> None:
@@ -184,7 +210,17 @@ class StickerWidget(Widget):
             self._drag_origin = (self.sticker.position.x, self.sticker.position.y)
         elif mode == _DRAG_RESIZE_LEFT:
             self._drag_origin = (self.sticker.position.x, self.sticker.size.width)
-        else:
+        elif mode == _DRAG_RESIZE_CORNER_BL:
+            self._drag_origin = (
+                self.sticker.position.x,
+                self.sticker.size.width,
+                self.sticker.size.height,
+            )
+        elif mode in (
+            _DRAG_RESIZE_RIGHT,
+            _DRAG_RESIZE_H,
+            _DRAG_RESIZE_CORNER_BR,
+        ):
             self._drag_origin = (self.sticker.size.width, self.sticker.size.height)
         self.capture_mouse()
 
@@ -235,6 +271,25 @@ class StickerWidget(Widget):
         elif self._drag_mode == _DRAG_RESIZE_H:
             new_h = max(self.MIN_HEIGHT, self._drag_origin[1] + dy)
             self.sticker.size.height = new_h
+            self.styles.height = new_h
+        elif self._drag_mode == _DRAG_RESIZE_CORNER_BL:
+            ox, ow, oh = self._drag_origin
+            new_x = max(0, ox + dx)
+            new_w = max(self.MIN_WIDTH, ow - dx)
+            new_h = max(self.MIN_HEIGHT, oh + dy)
+            self.sticker.position.x = new_x
+            self.sticker.size.width = new_w
+            self.sticker.size.height = new_h
+            self.styles.offset = (new_x, self.sticker.position.y)
+            self.styles.width = new_w
+            self.styles.height = new_h
+        elif self._drag_mode == _DRAG_RESIZE_CORNER_BR:
+            ow, oh = self._drag_origin
+            new_w = max(self.MIN_WIDTH, ow + dx)
+            new_h = max(self.MIN_HEIGHT, oh + dy)
+            self.sticker.size.width = new_w
+            self.sticker.size.height = new_h
+            self.styles.width = new_w
             self.styles.height = new_h
 
     def on_mouse_up(self, event: MouseUp) -> None:

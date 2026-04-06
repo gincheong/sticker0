@@ -113,6 +113,29 @@ async def test_sticker_resize_bottom_border(tmp_storage):
 
 
 @pytest.mark.asyncio
+async def test_sticker_resize_corner_br(tmp_storage):
+    """아래·오른쪽 2열 겹침 영역: 가로·세로 동시 리사이즈."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    s = Sticker(content="corner")
+    s.size.width = 30
+    s.size.height = 10
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        br_x = s.size.width - 1
+        br_y = s.size.height - 1
+        await pilot.mouse_down(widget, offset=(br_x, br_y))
+        await pilot.mouse_up(
+            offset=(widget.region.x + br_x + 5, widget.region.y + br_y + 5)
+        )
+        await pilot.pause(0.1)
+        assert widget.sticker.size.width == 35
+        assert widget.sticker.size.height == 15
+
+
+@pytest.mark.asyncio
 async def test_click_brings_sticker_to_front(tmp_storage):
     from sticker0.widgets.sticker_widget import StickerWidget
     s1 = Sticker(content="first")
