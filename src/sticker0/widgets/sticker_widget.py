@@ -216,7 +216,6 @@ class StickerWidget(Widget):
         if event.button == 1:
             try:
                 board = self.app.query_one("StickerBoard")
-                self.sticker.focused = True
                 board.close_all_menus()
             except NoMatches:
                 pass
