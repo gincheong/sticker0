@@ -1,7 +1,6 @@
 # src/sticker0/app.py
 from __future__ import annotations
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer
 from sticker0.config import AppConfig
 from sticker0.storage import StickerStorage
 from sticker0.widgets.board import StickerBoard
@@ -20,9 +19,7 @@ class Sticker0App(App):
         self.storage = storage or StickerStorage()
 
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
         yield StickerBoard(storage=self.storage, config=self.config)
-        yield Footer()
 
     def on_mount(self) -> None:
         kb = self.config.keybindings

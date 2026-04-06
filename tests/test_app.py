@@ -40,12 +40,12 @@ async def test_sticker_drag_moves_position(tmp_storage):
         from sticker0.widgets.sticker_widget import StickerWidget
         widget = app.query_one(StickerWidget)
         # 타이틀바에서 드래그: widget 위치 기준 offset (2, 0) 에서 mouse down
-        # widget.region = (5, 6) 이므로 screen_down = (7, 6)
+        # widget.region = (5, 5) 이므로 screen_down = (7, 5)
         await pilot.mouse_down(widget, offset=(2, 0))
         await pilot.pause()
-        # screen 절대좌표 (17, 11) 에서 mouse up -> delta (+10, +5)
+        # screen 절대좌표 (17, 10) 에서 mouse up -> delta (+10, +5)
         # new position = (5+10, 5+5) = (15, 10)
-        await pilot.mouse_up(offset=(17, 11))
+        await pilot.mouse_up(offset=(17, 10))
         await pilot.pause()
         assert widget.sticker.position.x == 15
         assert widget.sticker.position.y == 10
@@ -195,6 +195,15 @@ async def test_context_menu_buttons_have_text_color(tmp_storage):
         menu = app.query_one(ContextMenu)
         css = menu.DEFAULT_CSS
         assert "color: $text" in css
+
+
+@pytest.mark.asyncio
+async def test_app_has_no_header_or_footer(tmp_storage):
+    from textual.widgets import Header, Footer
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        assert len(app.query(Header)) == 0
+        assert len(app.query(Footer)) == 0
 
 
 @pytest.mark.asyncio
