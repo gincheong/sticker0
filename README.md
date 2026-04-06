@@ -6,6 +6,8 @@
 
 A terminal sticky notes TUI app built with Python + [Textual](https://textual.textualize.io/).
 
+![sticker0 running in the terminal](assets/screenshot-1.png)
+
 ---
 
 ## Features
@@ -21,17 +23,82 @@ A terminal sticky notes TUI app built with Python + [Textual](https://textual.te
 
 ---
 
-## Installation
+## 🚀 Installation
+
+### ⚡ Modern installation with uv (recommended)
+
+[uv](https://docs.astral.sh/uv/) is the fastest and easiest way to install and use sticker0.
+
+**Why uv is a good choice:**
+
+- ✅ Creates isolated environments automatically (fewer system conflicts)
+- ✅ Avoids many Python version / “externally-managed-environment” issues
+- ✅ Simple updates and uninstallation (`uv tool upgrade`, `uv tool uninstall`)
+- ✅ Works on Linux, macOS, and Windows
+
+**Requirements:** Python >= 3.11 (managed by uv as needed), Textual >= 0.80 (pulled in as a dependency).
+
+---
+
+### Install from PyPI
 
 ```bash
-# Recommended (uv)
+# Install directly from PyPI with uv (easiest)
 uv tool install sticker0
 
-# pip
-pip install sticker0
+# Run from anywhere
+stk
 ```
 
-**Requirements:** Python >= 3.11, Textual >= 0.80
+**Alternative — pip:**
+
+```bash
+pip install sticker0
+stk
+```
+
+---
+
+### Install from source
+
+```bash
+git clone https://github.com/dojun/sticker0.git
+cd sticker0
+uv tool install .
+
+# Run from anywhere
+stk
+```
+
+For local development without installing a global tool:
+
+```bash
+uv sync --dev
+uv run stk
+```
+
+---
+
+### First-time uv users
+
+If you don’t have uv installed yet, install it with one command:
+
+**Linux / macOS:**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+After installation, **restart your terminal** (or open a new one) so `uv` is on your `PATH`.
+
+For more options (Homebrew, WinGet, PyPI, etc.), see the official uv installation guide:  
+[Installation — Standalone installer & other methods](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer)
 
 ---
 
