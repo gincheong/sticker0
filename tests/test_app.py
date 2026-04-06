@@ -1,7 +1,7 @@
 # tests/test_app.py
 import pytest
 from sticker0.app import Sticker0App
-from sticker0.sticker import Sticker, StickerColor
+from sticker0.sticker import Sticker, StickerColors
 from sticker0.storage import StickerStorage
 
 
@@ -18,7 +18,7 @@ async def test_app_launches(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_sticker_widget_renders_title(tmp_storage):
+async def test_sticker_widget_renders(tmp_storage):
     s = Sticker(title="My Note", content="Hello")
     tmp_storage.save(s)
     app = Sticker0App(storage=tmp_storage)
@@ -39,12 +39,8 @@ async def test_sticker_drag_moves_position(tmp_storage):
     async with app.run_test(size=(120, 40)) as pilot:
         from sticker0.widgets.sticker_widget import StickerWidget
         widget = app.query_one(StickerWidget)
-        # 타이틀바에서 드래그: widget 위치 기준 offset (2, 0) 에서 mouse down
-        # widget.region = (5, 5) 이므로 screen_down = (7, 5)
         await pilot.mouse_down(widget, offset=(2, 0))
         await pilot.pause()
-        # screen 절대좌표 (17, 10) 에서 mouse up -> delta (+10, +5)
-        # new position = (5+10, 5+5) = (15, 10)
         await pilot.mouse_up(offset=(17, 10))
         await pilot.pause()
         assert widget.sticker.position.x == 15
@@ -53,8 +49,6 @@ async def test_sticker_drag_moves_position(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_textarea_always_present(tmp_storage):
-    """TextArea is always rendered (no separate view/edit modes)."""
-    from sticker0.widgets.sticker_widget import StickerWidget
     from textual.widgets import TextArea
     s = Sticker(content="hello")
     tmp_storage.save(s)
@@ -64,25 +58,8 @@ async def test_textarea_always_present(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_single_click_focuses_textarea(tmp_storage):
-    """Single click focuses the TextArea."""
-    from sticker0.widgets.sticker_widget import StickerWidget
-    from textual.widgets import TextArea
-    s = Sticker(title="Edit me", content="original")
-    tmp_storage.save(s)
-    app = Sticker0App(storage=tmp_storage)
-    async with app.run_test(size=(120, 40)) as pilot:
-        widget = app.query_one(StickerWidget)
-        await pilot.click(widget, offset=(5, 2))
-        await pilot.pause(0.1)
-        assert len(app.query(TextArea)) >= 1
-
-
-@pytest.mark.asyncio
 async def test_textarea_content_saves_on_change(tmp_storage):
-    """TextArea content changes are reflected in sticker data."""
     from sticker0.widgets.sticker_widget import StickerWidget
-    from textual.widgets import TextArea
     s = Sticker(content="original")
     tmp_storage.save(s)
     app = Sticker0App(storage=tmp_storage)
@@ -97,7 +74,6 @@ async def test_textarea_content_saves_on_change(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_sticker_resize_right_border(tmp_storage):
-    """Right border drag changes width."""
     from sticker0.widgets.sticker_widget import StickerWidget
     s = Sticker(content="Resize me")
     s.size.width = 30
@@ -118,7 +94,6 @@ async def test_sticker_resize_right_border(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_sticker_resize_bottom_border(tmp_storage):
-    """Bottom border drag changes height."""
     from sticker0.widgets.sticker_widget import StickerWidget
     s = Sticker(content="Resize me")
     s.size.width = 30
@@ -139,7 +114,6 @@ async def test_sticker_resize_bottom_border(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_click_brings_sticker_to_front(tmp_storage):
-    """Clicking a sticker moves it to the end of DOM (z-index front)."""
     from sticker0.widgets.sticker_widget import StickerWidget
     s1 = Sticker(content="first")
     s1.position.x = 0
@@ -207,37 +181,34 @@ async def test_press_n_creates_sticker(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_color_change_via_context_menu(tmp_storage):
+async def test_preset_change_via_context_menu(tmp_storage):
+    """우클릭 → 프리셋 변경 → Ink 선택 → 색상 변경 확인."""
     from sticker0.widgets.sticker_widget import StickerWidget
-    from sticker0.widgets.color_picker import ColorPicker
-    from sticker0.sticker import StickerColor
-    s = Sticker(title="Color test", color=StickerColor.YELLOW)
+    from sticker0.widgets.preset_picker import PresetPicker
+    s = Sticker(title="Preset test")
     tmp_storage.save(s)
     app = Sticker0App(storage=tmp_storage)
     async with app.run_test(size=(120, 40)) as pilot:
         widget = app.query_one(StickerWidget)
-        # 우클릭으로 컨텍스트 메뉴 열기
         await pilot.click(widget, button=3, offset=(5, 2))
         await pilot.pause(0.1)
         from sticker0.widgets.context_menu import ContextMenu
         menu = app.query_one(ContextMenu)
-        # 색상 변경 버튼 클릭
-        await pilot.click(menu.query_one("#menu-color"))
+        await pilot.click(menu.query_one("#menu-preset"))
         await pilot.pause(0.1)
-        # ColorPicker가 표시되어야 함
-        assert len(app.query(ColorPicker)) == 1
-        # 파란색 선택
-        picker = app.query_one(ColorPicker)
-        await pilot.click(picker.query_one("#color-blue"))
+        assert len(app.query(PresetPicker)) == 1
+        picker = app.query_one(PresetPicker)
+        await pilot.click(picker.query_one("#preset-Ink"))
         await pilot.pause(0.1)
-        # 스티커 색상이 변경되어야 함
         loaded = tmp_storage.load(s.id)
-        assert loaded.color == StickerColor.BLUE
+        assert loaded.colors.border == "black"
+        assert loaded.colors.text == "black"
+        assert loaded.colors.area == "transparent"
 
 
 @pytest.mark.asyncio
-async def test_context_menu_buttons_have_text_color(tmp_storage):
-    """ContextMenu CSS에 color: $text 가 있어야 버튼 텍스트가 보임."""
+async def test_context_menu_has_visible_text(tmp_storage):
+    """ContextMenu 텍스트가 동적 indicator 색상으로 표시됨."""
     from sticker0.widgets.context_menu import ContextMenu
     s = Sticker(title="Menu test")
     tmp_storage.save(s)
@@ -248,8 +219,8 @@ async def test_context_menu_buttons_have_text_color(tmp_storage):
         await pilot.click(widget, button=3, offset=(5, 2))
         await pilot.pause(0.1)
         menu = app.query_one(ContextMenu)
-        css = menu.DEFAULT_CSS
-        assert "color: $text" in css
+        # indicator 색상이 동적으로 적용되어야 함 (on_mount에서 self.styles.color 설정)
+        assert menu._indicator != ""
 
 
 @pytest.mark.asyncio
@@ -279,7 +250,6 @@ async def test_focused_sticker_delete_with_d_key(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_empty_board_right_click_shows_board_menu(tmp_storage):
-    """빈 보드 영역 우클릭 → BoardMenu 표시."""
     from sticker0.widgets.board_menu import BoardMenu
     app = Sticker0App(storage=tmp_storage)
     async with app.run_test(size=(120, 40)) as pilot:
@@ -291,7 +261,6 @@ async def test_empty_board_right_click_shows_board_menu(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_board_menu_create_adds_sticker(tmp_storage):
-    """BoardMenu Create → 새 스티커 생성."""
     from sticker0.widgets.board_menu import BoardMenu
     from sticker0.widgets.sticker_widget import StickerWidget
     app = Sticker0App(storage=tmp_storage)
@@ -308,7 +277,6 @@ async def test_board_menu_create_adds_sticker(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_board_menu_quit_exits_app(tmp_storage):
-    """BoardMenu Quit → 앱 종료."""
     from sticker0.widgets.board_menu import BoardMenu
     app = Sticker0App(storage=tmp_storage)
     async with app.run_test(size=(120, 40)) as pilot:
@@ -319,3 +287,99 @@ async def test_board_menu_quit_exits_app(tmp_storage):
         await pilot.click(menu.query_one("#board-quit"))
         await pilot.pause(0.1)
     assert not app.is_running
+
+
+@pytest.mark.asyncio
+async def test_board_theme_change(tmp_storage):
+    """보드 테마 변경 → 배경색 + indicator 변경 확인."""
+    from sticker0.widgets.board_menu import BoardMenu
+    from sticker0.widgets.theme_picker import ThemePicker
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        await pilot.click(menu.query_one("#board-theme"))
+        await pilot.pause(0.1)
+        assert len(app.query(ThemePicker)) == 1
+        picker = app.query_one(ThemePicker)
+        await pilot.click(picker.query_one("#theme-Dark-Base"))
+        await pilot.pause(0.1)
+        assert board.board_bg == "black"
+        assert board.indicator == "white"
+
+
+@pytest.mark.asyncio
+async def test_minimize_via_context_menu(tmp_storage):
+    """우클릭 → 최소화 → 높이 3줄 + 최소화 상태."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from sticker0.widgets.context_menu import ContextMenu
+    s = Sticker(content="Hello\nWorld\nLine3")
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        await pilot.click(menu.query_one("#menu-minimize"))
+        await pilot.pause(0.1)
+        assert widget.sticker.minimized is True
+
+
+@pytest.mark.asyncio
+async def test_restore_via_context_menu(tmp_storage):
+    """최소화 상태에서 우클릭 → 복원."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from sticker0.widgets.context_menu import ContextMenu
+    s = Sticker(content="Hello", minimized=True)
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 0))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        await pilot.click(menu.query_one("#menu-restore"))
+        await pilot.pause(0.1)
+        assert widget.sticker.minimized is False
+
+
+@pytest.mark.asyncio
+async def test_menu_mutual_exclusion(tmp_storage):
+    """스티커 메뉴와 보드 메뉴는 동시에 존재할 수 없음."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from sticker0.widgets.context_menu import ContextMenu
+    from sticker0.widgets.board_menu import BoardMenu
+    s = Sticker(content="test")
+    s.position.x = 0
+    s.position.y = 0
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        # 스티커 우클릭 → ContextMenu
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        assert len(app.query(ContextMenu)) == 1
+        # 보드 빈 영역 우클릭 → BoardMenu (ContextMenu는 닫혀야 함)
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(100, 30))
+        await pilot.pause(0.1)
+        assert len(app.query(ContextMenu)) == 0
+        assert len(app.query(BoardMenu)) == 1
+
+
+@pytest.mark.asyncio
+async def test_new_sticker_has_snow_preset_colors(tmp_storage):
+    """새 스티커는 Snow 프리셋 기본 색상."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.press("n")
+        await pilot.pause(0.1)
+        widget = app.query_one(StickerWidget)
+        assert widget.sticker.colors.border == "white"
+        assert widget.sticker.colors.text == "white"
+        assert widget.sticker.colors.area == "transparent"
