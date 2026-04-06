@@ -31,7 +31,11 @@ def _replace_toml_section(content: str, section: str, new_block: str) -> str:
             # 새 블록 삽입 (trailing newline 제거 후)
             result.extend(new_block.rstrip("\n").split("\n"))
             continue
-        if in_target and stripped.startswith("[") and not stripped.startswith(f"[{section}]"):
+        if (
+            in_target
+            and stripped.startswith("[")
+            and not stripped.startswith(f"[{section}]")
+        ):
             in_target = False
         if not in_target:
             result.append(line)
@@ -56,8 +60,8 @@ class BoardTheme:
 
 @dataclass
 class BorderConfig:
-    top: str = "heavy"
-    sides: str = "heavy"
+    top: str = "single"
+    sides: str = "single"
 
 
 @dataclass
@@ -94,9 +98,7 @@ class AppConfig:
         if (t := data.get("theme")) is not None:
             config.board_theme.background = t.get("background", "transparent")
             config.board_theme.indicator = t.get("indicator", "white")
-            config.board_theme.sticker_border = t.get(
-                "border", _G_THEME_STICKER.border
-            )
+            config.board_theme.sticker_border = t.get("border", _G_THEME_STICKER.border)
             config.board_theme.sticker_text = t.get("text", _G_THEME_STICKER.text)
             config.board_theme.sticker_area = t.get("area", _G_THEME_STICKER.area)
         # Border

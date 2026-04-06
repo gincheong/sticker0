@@ -103,6 +103,12 @@ class StickerWidget(Widget):
         except AttributeError:
             return ("double", "solid")
 
+    def on_focus(self, event) -> None:
+        self.styles.border = ("heavy", self.sticker.colors.border)
+
+    def on_blur(self, event) -> None:
+        self._apply_sticker_styles()  # 원래 스타일로 복원
+
     def _apply_sticker_styles(self) -> None:
         colors = self.sticker.colors
         # Area color: transparent → 보드 배경 상속
@@ -435,16 +441,15 @@ class StickerWidget(Widget):
         if event.key == "d":
             if not self._is_delete_pressed_once:
                 self._is_delete_pressed_once = True
+                self.styles.border = ("heavy", "red")
+                return
             else:
                 try:
                     board = self.app.query_one("StickerBoard")
                     board.delete_sticker(self.sticker.id)
-                    self._is_delete_pressed_once = False
                 except NoMatches:
                     pass
             event.stop()
-        else:
-            self._is_delete_pressed_once = False
 
         if event.key == "enter":
             self._enter_edit_mode()
@@ -452,3 +457,6 @@ class StickerWidget(Widget):
         if event.key == "escape":
             self.app.set_focus(None)
             event.stop()
+
+        self._is_delete_pressed_once = False
+        self.styles.border = ("heavy", self.sticker.colors.border)
