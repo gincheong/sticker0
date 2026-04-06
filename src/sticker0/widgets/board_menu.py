@@ -62,9 +62,9 @@ class BoardMenu(Widget):
         apply_clamp_popup_to_parent(self)
 
     def compose(self) -> ComposeResult:
-        yield PrimaryOnlyButton("Create Sticker", id="board-create")
-        yield PrimaryOnlyButton("Change Theme", id="board-theme")
-        yield PrimaryOnlyButton("Quit Application", id="board-quit")
+        yield PrimaryOnlyButton("Create", id="board-create")
+        yield PrimaryOnlyButton("Theme", id="board-theme")
+        yield PrimaryOnlyButton("Quit", id="board-quit")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         event.stop()
