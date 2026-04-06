@@ -431,14 +431,16 @@ async def test_popup_menus_close_on_left_click_outside(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_new_sticker_has_snow_preset_colors(tmp_storage):
-    """새 스티커는 Snow 프리셋 기본 색상."""
+async def test_new_sticker_uses_theme_default_colors(tmp_storage):
+    """새 스티커 색은 로드된 config.board_theme 스티커 기본값과 일치."""
     from sticker0.widgets.sticker_widget import StickerWidget
+
     app = Sticker0App(storage=tmp_storage)
+    bt = app.config.board_theme
     async with app.run_test(size=(120, 40)) as pilot:
         await pilot.press("n")
         await pilot.pause(0.1)
         widget = app.query_one(StickerWidget)
-        assert widget.sticker.colors.border == "white"
-        assert widget.sticker.colors.text == "white"
-        assert widget.sticker.colors.area == "transparent"
+        assert widget.sticker.colors.border == bt.sticker_border
+        assert widget.sticker.colors.text == bt.sticker_text
+        assert widget.sticker.colors.area == bt.sticker_area

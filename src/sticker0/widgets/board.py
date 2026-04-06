@@ -3,9 +3,8 @@ from __future__ import annotations
 from textual.widget import Widget
 from textual.app import ComposeResult
 from textual.events import MouseEvent, MouseUp, Resize
-from sticker0.config import AppConfig, BoardTheme
+from sticker0.config import AppConfig
 from sticker0.sticker import Sticker, StickerColors, StickerSize
-from sticker0.presets import STICKER_PRESETS
 from sticker0.storage import StickerStorage
 from sticker0.widgets.sticker_widget import StickerWidget
 
@@ -49,15 +48,12 @@ class StickerBoard(Widget):
 
     def add_new_sticker(self, x: int | None = None, y: int | None = None) -> None:
         cfg = self.config
-        # 기본 프리셋으로 색상 결정
-        preset_name = cfg.defaults.preset
-        preset = STICKER_PRESETS.get(preset_name)
-        if preset:
-            colors = StickerColors(
-                border=preset.border, text=preset.text, area=preset.area,
-            )
-        else:
-            colors = StickerColors()
+        bt = cfg.board_theme
+        colors = StickerColors(
+            border=bt.sticker_border,
+            text=bt.sticker_text,
+            area=bt.sticker_area,
+        )
         sticker = Sticker(
             colors=colors,
             size=StickerSize(
@@ -209,6 +205,11 @@ class StickerBoard(Widget):
                 widget.refresh()
                 self.storage.save(widget.sticker)
                 break
+        bt = self.config.board_theme
+        bt.sticker_border = message.colors.border
+        bt.sticker_text = message.colors.text
+        bt.sticker_area = message.colors.area
+        self.config.save_board_theme()
 
     def on_theme_picker_theme_selected(self, message) -> None:
         self.board_bg = message.background
@@ -218,9 +219,7 @@ class StickerBoard(Widget):
         for widget in self.query(StickerWidget):
             widget._apply_sticker_styles()
             widget.refresh()
-        # config 업데이트 + 저장
-        self.config.board_theme = BoardTheme(
-            background=message.background,
-            indicator=message.indicator,
-        )
+        # config 업데이트 + 저장 (스티커 기본 색은 유지)
+        self.config.board_theme.background = message.background
+        self.config.board_theme.indicator = message.indicator
         self.config.save_board_theme()

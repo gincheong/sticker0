@@ -5,9 +5,16 @@ import tempfile
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
-from sticker0.presets import StickerPreset, BoardThemePreset
+from sticker0.presets import (
+    STICKER_PRESETS,
+    BoardThemePreset,
+    DEFAULT_STICKER_PRESET,
+    StickerPreset,
+)
 
 CONFIG_PATH = Path.home() / ".stkrc"
+
+_G_THEME_STICKER = STICKER_PRESETS[DEFAULT_STICKER_PRESET]
 
 
 def _replace_toml_section(content: str, section: str, new_block: str) -> str:
@@ -38,8 +45,13 @@ def _replace_toml_section(content: str, section: str, new_block: str) -> str:
 
 @dataclass
 class BoardTheme:
+    """[theme]: 보드 배경/강조색 + 새 스티커 기본 색(border/text/area)."""
+
     background: str = "transparent"
     indicator: str = "white"
+    sticker_border: str = _G_THEME_STICKER.border
+    sticker_text: str = _G_THEME_STICKER.text
+    sticker_area: str = _G_THEME_STICKER.area
 
 
 @dataclass
@@ -82,6 +94,11 @@ class AppConfig:
         if (t := data.get("theme")) is not None:
             config.board_theme.background = t.get("background", "transparent")
             config.board_theme.indicator = t.get("indicator", "white")
+            config.board_theme.sticker_border = t.get(
+                "border", _G_THEME_STICKER.border
+            )
+            config.board_theme.sticker_text = t.get("text", _G_THEME_STICKER.text)
+            config.board_theme.sticker_area = t.get("area", _G_THEME_STICKER.area)
         # Border
         if (b := data.get("border")) is not None:
             config.border.top = b.get("top", "double")
@@ -116,11 +133,15 @@ class AppConfig:
         return config
 
     def save_board_theme(self, path: Path = CONFIG_PATH) -> None:
-        """보드 테마를 .stkrc [theme] 섹션에 atomic write."""
+        """[theme] 섹션에 보드 배경/indicator와 새 스티커 기본 색을 atomic write."""
+        bt = self.board_theme
         theme_block = (
             "[theme]\n"
-            f'background = "{self.board_theme.background}"\n'
-            f'indicator = "{self.board_theme.indicator}"\n'
+            f'background = "{bt.background}"\n'
+            f'indicator = "{bt.indicator}"\n'
+            f'border = "{bt.sticker_border}"\n'
+            f'text = "{bt.sticker_text}"\n'
+            f'area = "{bt.sticker_area}"\n'
         )
         if path.exists():
             content = _replace_toml_section(

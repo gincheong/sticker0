@@ -6,14 +6,20 @@ from sticker0.config import AppConfig, BoardTheme, BorderConfig
 
 
 def test_defaults_when_no_file(tmp_path):
+    from sticker0.presets import STICKER_PRESETS, DEFAULT_STICKER_PRESET
+
+    g = STICKER_PRESETS[DEFAULT_STICKER_PRESET]
     config = AppConfig.load(path=tmp_path / ".stkrc")
     assert config.board_theme.background == "transparent"
     assert config.board_theme.indicator == "white"
-    assert config.border.top == "double"
-    assert config.border.sides == "single"
+    assert config.board_theme.sticker_border == g.border
+    assert config.board_theme.sticker_text == g.text
+    assert config.board_theme.sticker_area == g.area
+    assert config.border.top == "heavy"
+    assert config.border.sides == "heavy"
     assert config.defaults.width == 30
     assert config.defaults.height == 10
-    assert config.defaults.preset == "Snow"
+    assert config.defaults.preset == "Graphite"
     assert config.keybindings.new == "n"
     assert config.keybindings.quit == "q"
 
@@ -28,6 +34,25 @@ indicator = "white"
     config = AppConfig.load(path=rc)
     assert config.board_theme.background == "black"
     assert config.board_theme.indicator == "white"
+
+
+def test_load_theme_sticker_colors_from_toml(tmp_path):
+    rc = tmp_path / ".stkrc"
+    rc.write_text(
+        """
+[theme]
+background = "black"
+indicator = "white"
+border = "#111111"
+text = "#222222"
+area = "#333333"
+""",
+        encoding="utf-8",
+    )
+    config = AppConfig.load(path=rc)
+    assert config.board_theme.sticker_border == "#111111"
+    assert config.board_theme.sticker_text == "#222222"
+    assert config.board_theme.sticker_area == "#333333"
 
 
 def test_load_border_config_from_toml(tmp_path):
@@ -77,6 +102,9 @@ def test_partial_config_uses_defaults(tmp_path):
 
 
 def test_save_board_theme_creates_file(tmp_path):
+    from sticker0.presets import STICKER_PRESETS, DEFAULT_STICKER_PRESET
+
+    g = STICKER_PRESETS[DEFAULT_STICKER_PRESET]
     rc = tmp_path / ".stkrc"
     config = AppConfig.load(path=rc)
     config.board_theme = BoardTheme(background="black", indicator="white")
@@ -85,6 +113,9 @@ def test_save_board_theme_creates_file(tmp_path):
     reloaded = AppConfig.load(path=rc)
     assert reloaded.board_theme.background == "black"
     assert reloaded.board_theme.indicator == "white"
+    assert reloaded.board_theme.sticker_border == g.border
+    assert reloaded.board_theme.sticker_text == g.text
+    assert reloaded.board_theme.sticker_area == g.area
 
 
 def test_save_board_theme_preserves_other_sections(tmp_path):
