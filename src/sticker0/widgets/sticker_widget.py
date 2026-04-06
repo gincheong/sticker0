@@ -457,6 +457,9 @@ class StickerWidget(Widget):
         if event.key == "escape":
             self.app.set_focus(None)
             event.stop()
+        if event.key == "q":
+            # 스티커 포커스 상태의 `q` 로 앱이 종료되지 않게 처리
+            event.stop()
 
         self._is_delete_pressed_once = False
         self.styles.border = ("heavy", self.sticker.colors.border)
