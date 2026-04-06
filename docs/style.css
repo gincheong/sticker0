@@ -461,3 +461,13 @@ footer a:hover { color: var(--accent); }
 @media (hover: none) {
   .cursor-glow { display: none; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-aura { animation: none; opacity: 0.5; }
+  .cursor-blink { animation: none; }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

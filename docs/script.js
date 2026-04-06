@@ -22,6 +22,7 @@
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
           }
         });
       },
@@ -78,6 +79,9 @@
       return;
     }
     navigator.clipboard.writeText('uv tool install sticker0').then(function () {
+      showCopied(btn);
+    }).catch(function () {
+      fallbackCopy('uv tool install sticker0');
       showCopied(btn);
     });
   };
