@@ -16,13 +16,16 @@ class ThemePicker(Widget):
         width: 22;
         height: auto;
         background: $surface;
+        color: $text;
         layer: menu;
     }
     ThemePicker Button {
         width: 1fr;
-        height: 1;
+        height: auto;
+        min-height: 1;
         border: none;
         background: transparent;
+        color: $text;
     }
     ThemePicker Button:hover {
         background: $accent 20%;
@@ -54,7 +57,6 @@ class ThemePicker(Widget):
     def on_mount(self) -> None:
         self.styles.offset = (self._x, self._y)
         self.styles.border = ("round", self._indicator)
-        self.styles.color = self._indicator
 
     def compose(self) -> ComposeResult:
         self._id_to_name: dict[str, str] = {}

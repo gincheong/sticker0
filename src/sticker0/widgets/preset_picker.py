@@ -17,13 +17,16 @@ class PresetPicker(Widget):
         width: 22;
         height: auto;
         background: $surface;
+        color: $text;
         layer: menu;
     }
     PresetPicker Button {
         width: 1fr;
-        height: 1;
+        height: auto;
+        min-height: 1;
         border: none;
         background: transparent;
+        color: $text;
     }
     PresetPicker Button:hover {
         background: $accent 20%;
@@ -57,7 +60,6 @@ class PresetPicker(Widget):
     def on_mount(self) -> None:
         self.styles.offset = (self._x, self._y)
         self.styles.border = ("round", self._indicator)
-        self.styles.color = self._indicator
 
     def compose(self) -> ComposeResult:
         for name in self._all_presets:

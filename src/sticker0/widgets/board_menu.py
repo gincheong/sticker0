@@ -15,13 +15,16 @@ class BoardMenu(Widget):
         width: 24;
         height: auto;
         background: $surface;
+        color: $text;
         layer: menu;
     }
     BoardMenu Button {
         width: 1fr;
-        height: 1;
+        height: auto;
+        min-height: 1;
         border: none;
         background: transparent;
+        color: $text;
     }
     BoardMenu Button:hover {
         background: $accent 20%;
@@ -50,12 +53,11 @@ class BoardMenu(Widget):
     def on_mount(self) -> None:
         self.styles.offset = (self._menu_x, self._menu_y)
         self.styles.border = ("round", self._indicator)
-        self.styles.color = self._indicator
 
     def compose(self) -> ComposeResult:
-        yield Button("✨ Create", id="board-create")
-        yield Button("🎨 색상 테마 변경", id="board-theme")
-        yield Button("✖ Quit", id="board-quit")
+        yield Button("Create Sticker", id="board-create")
+        yield Button("Change Theme", id="board-theme")
+        yield Button("Quit Application", id="board-quit")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         event.stop()

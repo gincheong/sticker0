@@ -15,13 +15,16 @@ class ContextMenu(Widget):
         width: 20;
         height: auto;
         background: $surface;
+        color: $text;
         layer: menu;
     }
     ContextMenu Button {
         width: 1fr;
-        height: 1;
+        height: auto;
+        min-height: 1;
         border: none;
         background: transparent;
+        color: $text;
     }
     ContextMenu Button:hover {
         background: $accent 20%;
@@ -53,17 +56,16 @@ class ContextMenu(Widget):
     def on_mount(self) -> None:
         self.styles.offset = (self._menu_x, self._menu_y)
         self.styles.border = ("round", self._indicator)
-        self.styles.color = self._indicator
 
     def compose(self) -> ComposeResult:
         if self._minimized:
-            yield Button("복원", id="menu-restore", variant="default")
+            yield Button("Expand", id="menu-restore")
         else:
-            yield Button("편집", id="menu-edit", variant="default")
-            yield Button("최소화", id="menu-minimize", variant="default")
-        yield Button("프리셋 변경", id="menu-preset", variant="default")
-        yield Button("삭제", id="menu-delete", variant="error")
-        yield Button("닫기", id="menu-close", variant="default")
+            yield Button("Edit", id="menu-edit")
+            yield Button("Minimize", id="menu-minimize")
+        yield Button("Change Preset", id="menu-preset")
+        yield Button("Delete", id="menu-delete", variant="error")
+        yield Button("Close", id="menu-close")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         event.stop()
