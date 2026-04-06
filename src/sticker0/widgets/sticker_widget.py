@@ -140,8 +140,15 @@ class StickerWidget(Widget):
                 editor.theme = theme_name
             editor.styles.background = area_color
             editor.styles.color = colors.text
-            editor.styles.scrollbar_color = colors.text
-            editor.styles.scrollbar_background = colors.area if colors.area != "transparent" else area_color
+            # 스크롤 트랙은 항상 스티커 배경. 썸은 본문색, 호버 시 변화 없음, 드래그(grab) 시만 #888.
+            track = colors.area if colors.area != "transparent" else area_color
+            thumb = colors.text
+            editor.styles.scrollbar_background = track
+            editor.styles.scrollbar_background_hover = track
+            editor.styles.scrollbar_background_active = track
+            editor.styles.scrollbar_color = thumb
+            editor.styles.scrollbar_color_hover = thumb
+            editor.styles.scrollbar_color_active = "#888"
         except NoMatches:
             pass
 
