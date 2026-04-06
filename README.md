@@ -112,11 +112,11 @@ stk
 
 ## Keyboard shortcuts
 
-| Key            | Action                 |
-| -------------- | ---------------------- |
-| `n`            | New sticker            |
-| `d` / `Delete` | Delete focused sticker |
-| `q`            | Quit                   |
+| Key  | Action                 |
+| ---- | ---------------------- |
+| `n`  | New sticker            |
+| `dd` | Delete focused sticker |
+| `q`  | Quit                   |
 
 ---
 
