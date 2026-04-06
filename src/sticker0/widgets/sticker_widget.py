@@ -80,6 +80,7 @@ class StickerWidget(Widget):
         self._drag_origin: tuple[int, ...] = (0, 0)
         self._drag_mode: str = _DRAG_MOVE
         self._last_top_click: float = 0.0
+        self._is_delete_pressed_once = False
 
     def on_mount(self) -> None:
         self._apply_sticker_styles()
@@ -215,6 +216,7 @@ class StickerWidget(Widget):
         if event.button == 1:
             try:
                 board = self.app.query_one("StickerBoard")
+                self.sticker.focused = True
                 board.close_all_menus()
             except NoMatches:
                 pass
@@ -432,12 +434,19 @@ class StickerWidget(Widget):
 
     def on_key(self, event) -> None:
         if event.key == "d":
-            try:
-                board = self.app.query_one("StickerBoard")
-                board.delete_sticker(self.sticker.id)
-            except NoMatches:
-                pass
+            if not self._is_delete_pressed_once:
+                self._is_delete_pressed_once = True
+            else:
+                try:
+                    board = self.app.query_one("StickerBoard")
+                    board.delete_sticker(self.sticker.id)
+                    self._is_delete_pressed_once = False
+                except NoMatches:
+                    pass
             event.stop()
-        elif event.key == "enter":
+        else:
+            self._is_delete_pressed_once = False
+
+        if event.key == "enter":
             self._enter_edit_mode()
             event.stop()
