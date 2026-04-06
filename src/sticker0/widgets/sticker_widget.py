@@ -209,7 +209,9 @@ class StickerWidget(Widget):
             if children and children[-1] is not self:
                 parent.move_child(self, after=children[-1])
 
-    def _handle_primary_down(self, event: MouseDown, local_x: int, local_y: int) -> None:
+    def _handle_primary_down(
+        self, event: MouseDown, local_x: int, local_y: int
+    ) -> None:
         if event.button == 1:
             try:
                 board = self.app.query_one("StickerBoard")
@@ -366,6 +368,7 @@ class StickerWidget(Widget):
 
     def _set_minimized(self, minimized: bool) -> None:
         from textual.widgets import Static
+
         self.sticker.minimized = minimized
         if minimized:
             self.styles.height = self.MINIMIZED_HEIGHT
@@ -375,7 +378,9 @@ class StickerWidget(Widget):
             except NoMatches:
                 pass
             # 첫 줄 텍스트 + ellipsis 표시
-            first_line = self.sticker.content.split("\n")[0] if self.sticker.content else ""
+            first_line = (
+                self.sticker.content.split("\n")[0] if self.sticker.content else ""
+            )
             max_w = max(1, self.sticker.size.width - 4)
             if len(first_line) > max_w:
                 first_line = first_line[: max_w - 3] + "..."
@@ -403,6 +408,7 @@ class StickerWidget(Widget):
 
     def _show_context_menu(self, screen_x: int, screen_y: int) -> None:
         from sticker0.widgets.context_menu import ContextMenu
+
         board = self.app.query_one("StickerBoard")
         # 메뉴 상호 배제: 모든 기존 메뉴 닫기
         board.close_all_menus()
@@ -425,7 +431,7 @@ class StickerWidget(Widget):
             self._get_editor().focus()
 
     def on_key(self, event) -> None:
-        if event.key in ("d", "delete"):
+        if event.key == "d":
             try:
                 board = self.app.query_one("StickerBoard")
                 board.delete_sticker(self.sticker.id)
