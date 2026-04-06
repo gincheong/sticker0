@@ -1,0 +1,22 @@
+{
+  "id": "466b8e99-261a-4eda-a462-974e70c597d7",
+  "title": "",
+  "content": "Superpowers - obra's dev toolkit.\n\nHas /brainstorm, /write-plan, /execute-plan commands that basically turn Claude into a proper dev workflow instead of just a chatbot. Game changer if you're coding seriously.",
+  "colors": {
+    "border": "#d4d4d8",
+    "text": "#d4d4d8",
+    "area": "#2a2a2e"
+  },
+  "line": "round",
+  "minimized": false,
+  "position": {
+    "x": 5,
+    "y": 1
+  },
+  "size": {
+    "width": 33,
+    "height": 22
+  },
+  "created_at": "2026-04-06T19:06:34.586119+00:00",
+  "updated_at": "2026-04-06T20:05:33.021246+00:00"
+}

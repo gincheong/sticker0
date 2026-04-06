@@ -1,0 +1,22 @@
+{
+  "id": "e5fbd617-5fff-4dfe-937f-71ce856e346b",
+  "title": "",
+  "content": "# Claude Code Shortcuts\n\n/clear        reset session\n/config       settings (theme, model)\n/model        switch model\n/cost         usage stats\n/context      context usage\n\n/copy         copy last response\n/export       export chat\n\n/plan         plan mode\n/compact      compress chat\n\n/branch       fork session\n/resume       resume session\n\n/help         commands\n/exit         quit",
+  "colors": {
+    "border": "#2f2f2f",
+    "text": "#2f2f2f",
+    "area": "#f2f2f0"
+  },
+  "line": "heavy",
+  "minimized": false,
+  "position": {
+    "x": 10,
+    "y": 7
+  },
+  "size": {
+    "width": 30,
+    "height": 22
+  },
+  "created_at": "2026-04-06T16:40:23.857715+00:00",
+  "updated_at": "2026-04-06T20:07:33.957545+00:00"
+}
