@@ -98,9 +98,11 @@ class StickerWidget(Widget):
         else:
             self.styles.height = self.sticker.size.height
 
-        # TextArea 스크롤바 색상
+        # TextArea: 기본 $surface/$foreground가 부모를 가리지 않으므로 편집 영역에 직접 반영
         try:
             editor = self._get_editor()
+            editor.styles.background = area_color
+            editor.styles.color = colors.text
             editor.styles.scrollbar_color = colors.text
             editor.styles.scrollbar_background = colors.area if colors.area != "transparent" else area_color
         except NoMatches:
