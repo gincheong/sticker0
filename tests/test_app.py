@@ -181,6 +181,23 @@ async def test_color_change_via_context_menu(tmp_storage):
 
 
 @pytest.mark.asyncio
+async def test_context_menu_buttons_have_text_color(tmp_storage):
+    """ContextMenu CSS에 color: $text 가 있어야 버튼 텍스트가 보임."""
+    from sticker0.widgets.context_menu import ContextMenu
+    s = Sticker(title="Menu test")
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        from sticker0.widgets.sticker_widget import StickerWidget
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        css = menu.DEFAULT_CSS
+        assert "color: $text" in css
+
+
+@pytest.mark.asyncio
 async def test_focused_sticker_delete_with_d_key(tmp_storage):
     from sticker0.widgets.sticker_widget import StickerWidget
     s = Sticker(title="Press d")

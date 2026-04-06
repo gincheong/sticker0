@@ -16,6 +16,7 @@ class ContextMenu(Widget):
         height: auto;
         border: round $accent;
         background: $surface;
+        color: $text;
         layer: menu;
     }
     ContextMenu Button {
@@ -23,6 +24,7 @@ class ContextMenu(Widget):
         height: 1;
         border: none;
         background: transparent;
+        color: $text;
     }
     ContextMenu Button:hover {
         background: $accent 20%;
