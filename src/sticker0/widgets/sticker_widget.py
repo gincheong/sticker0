@@ -450,3 +450,6 @@ class StickerWidget(Widget):
         if event.key == "enter":
             self._enter_edit_mode()
             event.stop()
+        if event.key == "escape":
+            self.app.set_focus(None)
+            event.stop()
