@@ -214,3 +214,9 @@ line = "solid"
 ```
 
 `line` applies to the **outline** drawn around each sticker (all four edges use the same style). It does not replace the color preset fields above; those control sticker fill and text colors.
+
+---
+
+## License
+
+MIT © 2026 Lee Dojun. See [LICENSE](LICENSE).

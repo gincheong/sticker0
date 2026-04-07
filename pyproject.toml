@@ -1,6 +1,7 @@
 [project]
 name = "sticker0"
 version = "0.5.0"
+license = "MIT"
 description = "Terminal sticky notes"
 readme = "README.md"
 requires-python = ">=3.11"
