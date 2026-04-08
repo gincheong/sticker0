@@ -477,7 +477,7 @@ class StickerWidget(Widget):
             self._enter_edit_mode()
             event.stop()
         if event.key == "escape":
-            self.app.set_focus(None)
+            self.focus()
             event.stop()
         if event.key == "q":
             # 스티커 포커스 상태의 `q` 로 앱이 종료되지 않게 처리
