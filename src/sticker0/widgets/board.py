@@ -87,7 +87,9 @@ class StickerBoard(Container):
             except Exception:
                 pass
         self.storage.save(sticker)
-        self.mount(StickerWidget(sticker))
+        widget = StickerWidget(sticker)
+        self.mount(widget)
+        self.call_after_refresh(lambda: widget._get_editor().focus())
 
     def delete_sticker(self, sticker_id: str) -> None:
         for widget in self.query(StickerWidget):

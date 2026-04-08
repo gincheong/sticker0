@@ -14,6 +14,7 @@ class Sticker0App(App):
     """
 
     BINDINGS = [
+        ("n", "new_sticker", "New sticker"),
         ("ctrl+z", "undo_delete", "Undo delete"),
     ]
 
@@ -26,6 +27,10 @@ class Sticker0App(App):
         super().__init__(**kwargs)
         self.config = config if config is not None else AppConfig.load()
         self.storage = storage or StickerStorage()
+
+    def action_new_sticker(self) -> None:
+        board = self.query_one(StickerBoard)
+        board.add_new_sticker()
 
     def action_undo_delete(self) -> None:
         board = self.query_one(StickerBoard)
