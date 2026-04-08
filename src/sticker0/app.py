@@ -13,6 +13,10 @@ class Sticker0App(App):
     }
     """
 
+    BINDINGS = [
+        ("ctrl+z", "undo_delete", "Undo delete"),
+    ]
+
     def __init__(
         self,
         storage: StickerStorage | None = None,
@@ -22,6 +26,10 @@ class Sticker0App(App):
         super().__init__(**kwargs)
         self.config = config if config is not None else AppConfig.load()
         self.storage = storage or StickerStorage()
+
+    def action_undo_delete(self) -> None:
+        board = self.query_one(StickerBoard)
+        board.undo_delete()
 
     def compose(self) -> ComposeResult:
         yield StickerBoard(storage=self.storage, config=self.config)

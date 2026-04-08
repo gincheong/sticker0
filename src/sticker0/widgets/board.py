@@ -23,6 +23,8 @@ class StickerBoard(Container):
     }
     """
 
+    _UNDO_LIMIT = 50
+
     def __init__(
         self,
         storage: StickerStorage,
@@ -34,6 +36,7 @@ class StickerBoard(Container):
         self.config = config
         self.board_bg = config.board_theme.background
         self.indicator = config.board_theme.indicator
+        self._undo_stack: list[Sticker] = []
 
     def on_mount(self) -> None:
         self._apply_board_theme()
@@ -87,11 +90,25 @@ class StickerBoard(Container):
         self.mount(StickerWidget(sticker))
 
     def delete_sticker(self, sticker_id: str) -> None:
-        self.storage.delete(sticker_id)
         for widget in self.query(StickerWidget):
             if widget.sticker.id == sticker_id:
+                self._undo_stack.append(
+                    Sticker.from_dict(widget.sticker.to_dict())
+                )
+                if len(self._undo_stack) > self._UNDO_LIMIT:
+                    self._undo_stack.pop(0)
                 widget.remove()
                 break
+        self.storage.delete(sticker_id)
+
+    def undo_delete(self) -> bool:
+        """마지막으로 삭제한 스티커를 복원한다."""
+        if not self._undo_stack:
+            return False
+        sticker = self._undo_stack.pop()
+        self.storage.save(sticker)
+        self.mount(StickerWidget(sticker))
+        return True
 
     def close_all_menus(self) -> None:
         """모든 팝업 메뉴/피커 닫기 (상호 배제)."""

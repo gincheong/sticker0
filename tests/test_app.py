@@ -689,3 +689,73 @@ async def test_workspace_mode_settings_toml_independent(tmp_path):
     assert settings_file.exists()
     content = settings_file.read_text(encoding="utf-8")
     assert "[theme]" in content
+
+
+@pytest.mark.asyncio
+async def test_undo_delete_restores_sticker(tmp_storage):
+    """삭제 후 ctrl+z로 스티커가 복원된다."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from sticker0.widgets.context_menu import ContextMenu
+
+    s = Sticker(title="Undo me", content="important text")
+    s.position.x = 10
+    s.position.y = 5
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        await pilot.click(menu.query_one("#menu-delete"))
+        await pilot.pause(0.1)
+        assert len(app.query(StickerWidget)) == 0
+
+        await pilot.press("ctrl+z")
+        await pilot.pause(0.1)
+        assert len(app.query(StickerWidget)) == 1
+        restored = app.query_one(StickerWidget).sticker
+        assert restored.id == s.id
+        assert restored.content == "important text"
+        assert restored.position.x == 10
+        assert tmp_storage.load(s.id) is not None
+
+
+@pytest.mark.asyncio
+async def test_undo_delete_noop_when_stack_empty(tmp_storage):
+    """삭제 이력이 없을 때 ctrl+z는 아무 일도 하지 않는다."""
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.press("ctrl+z")
+        await pilot.pause(0.1)
+        # 에러 없이 동작만 확인
+        assert app.is_running
+
+
+@pytest.mark.asyncio
+async def test_undo_delete_multiple(tmp_storage):
+    """여러 스티커 삭제 후 ctrl+z로 역순 복원."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from sticker0.widgets.board import StickerBoard
+
+    s1 = Sticker(title="First")
+    s2 = Sticker(title="Second")
+    tmp_storage.save(s1)
+    tmp_storage.save(s2)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one(StickerBoard)
+        board.delete_sticker(s1.id)
+        await pilot.pause(0.1)
+        board.delete_sticker(s2.id)
+        await pilot.pause(0.1)
+        assert len(app.query(StickerWidget)) == 0
+
+        await pilot.press("ctrl+z")
+        await pilot.pause(0.1)
+        assert len(app.query(StickerWidget)) == 1
+        assert app.query_one(StickerWidget).sticker.id == s2.id
+
+        await pilot.press("ctrl+z")
+        await pilot.pause(0.1)
+        assert len(app.query(StickerWidget)) == 2
