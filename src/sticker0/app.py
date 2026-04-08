@@ -13,21 +13,15 @@ class Sticker0App(App):
     }
     """
 
-    def __init__(self, storage: StickerStorage | None = None, **kwargs) -> None:
+    def __init__(
+        self,
+        storage: StickerStorage | None = None,
+        config: AppConfig | None = None,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
-        self.config = AppConfig.load()
+        self.config = config if config is not None else AppConfig.load()
         self.storage = storage or StickerStorage()
 
     def compose(self) -> ComposeResult:
         yield StickerBoard(storage=self.storage, config=self.config)
-
-    def on_mount(self) -> None:
-        kb = self.config.keybindings
-        self.bind(kb.new, "new_sticker", description="새 스티커")
-        self.bind(kb.quit, "quit", description="종료")
-
-    def action_new_sticker(self) -> None:
-        self.query_one(StickerBoard).add_new_sticker()
-
-    def action_quit(self) -> None:
-        self.exit()

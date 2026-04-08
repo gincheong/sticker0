@@ -12,14 +12,6 @@ from textual.events import MouseDown, MouseMove, MouseUp
 from textual.css.query import NoMatches
 from sticker0.sticker import Sticker
 
-# 테두리 스타일 이름 → Textual border 스타일
-BORDER_STYLE_MAP: dict[str, str] = {
-    "single": "solid",
-    "double": "double",
-    "heavy": "heavy",
-    "simple": "ascii",
-}
-
 _DRAG_MOVE = "move"
 _DRAG_RESIZE_RIGHT = "resize_right"
 _DRAG_RESIZE_LEFT = "resize_left"
@@ -66,6 +58,9 @@ class StickerWidget(Widget):
     StickerWidget StickerTextArea:focus {
         border: none;
     }
+    StickerWidget #minimized-label {
+        padding: 0 1 0 1;
+    }
     """
 
     MIN_WIDTH = 20
@@ -84,6 +79,8 @@ class StickerWidget(Widget):
 
     def on_mount(self) -> None:
         self._apply_sticker_styles()
+        if self.sticker.minimized:
+            self._sync_minimized_ui(True)
 
     def _get_board_background(self) -> str:
         """보드 테마의 background 색상 조회."""
@@ -93,18 +90,21 @@ class StickerWidget(Widget):
         except NoMatches:
             return "transparent"
 
-    def _get_border_config(self) -> tuple[str, str]:
-        """config에서 border top/sides 스타일 조회. (top_textual, sides_textual) 반환."""
+    def _get_indicator(self) -> str:
+        """보드 테마의 indicator 색상 조회 (border/text inherit 시 사용)."""
         try:
-            config = self.app.config
-            top = BORDER_STYLE_MAP.get(config.border.top, "double")
-            sides = BORDER_STYLE_MAP.get(config.border.sides, "solid")
-            return (top, sides)
-        except AttributeError:
-            return ("double", "solid")
+            board = self.app.query_one("StickerBoard")
+            return getattr(board, "indicator", "white")
+        except NoMatches:
+            return "white"
 
     def on_focus(self, event) -> None:
-        self.styles.border = ("heavy", self.sticker.colors.border)
+        border_color = (
+            self._get_indicator()
+            if self.sticker.colors.border == "inherit"
+            else self.sticker.colors.border
+        )
+        self.styles.border = ("heavy", border_color)
 
     def on_blur(self, event) -> None:
         self._apply_sticker_styles()  # 원래 스타일로 복원
@@ -115,13 +115,21 @@ class StickerWidget(Widget):
         area_color = colors.area
         if area_color == "transparent":
             area_color = self._get_board_background()
+        border_color = (
+            self._get_indicator() if colors.border == "inherit" else colors.border
+        )
+        text_color = self._get_indicator() if colors.text == "inherit" else colors.text
         self.styles.background = area_color
-        self.styles.color = colors.text
+        self.styles.color = text_color
 
-        # Border style from config
-        top_style, sides_style = self._get_border_config()
-        self.styles.border = (sides_style, colors.border)
-        self.styles.border_top = (top_style, colors.border)
+        from sticker0.sticker import BORDER_STYLES, DEFAULT_BORDER_LINE
+
+        line = (
+            self.sticker.line
+            if self.sticker.line in BORDER_STYLES
+            else DEFAULT_BORDER_LINE
+        )
+        self.styles.border = (line, border_color)
 
         # Position and size
         self.styles.offset = (self.sticker.position.x, self.sticker.position.y)
@@ -140,22 +148,26 @@ class StickerWidget(Widget):
             if base_theme is not None:
                 theme_name = f"sticker-ta-{self.sticker.id}"
                 # 일반 글자와 동일한 (text + area) 조합은 커서 칸이 안 보임. 역전시켜 텍스트 색이 블록에 쓰이게 함.
-                cursor_style = Style(color=area_color, bgcolor=colors.text)
+                # Rich Style은 "transparent"를 해석하지 못하므로 "default"로 치환한다.
+                cursor_fg = area_color if area_color != "transparent" else "default"
+                cursor_style = Style(color=cursor_fg, bgcolor=text_color)
                 editor.register_theme(
                     replace(base_theme, name=theme_name, cursor_style=cursor_style)
                 )
                 editor.theme = theme_name
             editor.styles.background = area_color
-            editor.styles.color = colors.text
+            editor.styles.color = text_color
             # 스크롤 트랙은 항상 스티커 배경. 썸은 본문색, 호버 시 변화 없음, 드래그(grab) 시만 #888.
             track = colors.area if colors.area != "transparent" else area_color
-            thumb = colors.text
+            thumb = text_color
             editor.styles.scrollbar_background = track
             editor.styles.scrollbar_background_hover = track
             editor.styles.scrollbar_background_active = track
             editor.styles.scrollbar_color = thumb
             editor.styles.scrollbar_color_hover = thumb
             editor.styles.scrollbar_color_active = "#888"
+            if self.sticker.minimized:
+                editor.display = False
         except NoMatches:
             pass
 
@@ -169,6 +181,15 @@ class StickerWidget(Widget):
 
     def _get_editor(self) -> TextArea:
         return self.query_one(f"#sticker-editor-{self.sticker.id}", TextArea)
+
+    def replace_body_text(self, text: str) -> None:
+        """스티커 본문과 TextArea를 동일한 문자열로 맞춘다(저장은 호출부)."""
+
+        self.sticker.content = text
+        try:
+            self._get_editor().text = text
+        except NoMatches:
+            pass
 
     def _classify_border(self, x: int, y: int) -> str | None:
         """테두리 영역 분류.
@@ -373,18 +394,16 @@ class StickerWidget(Widget):
         """최소화/복원 토글."""
         self._set_minimized(not self.sticker.minimized)
 
-    def _set_minimized(self, minimized: bool) -> None:
+    def _sync_minimized_ui(self, minimized: bool) -> None:
+        """최소화 상태에 맞춰 높이·에디터 표시·요약 라벨만 조정한다(저장 없음)."""
         from textual.widgets import Static
 
-        self.sticker.minimized = minimized
         if minimized:
             self.styles.height = self.MINIMIZED_HEIGHT
             try:
-                editor = self._get_editor()
-                editor.display = False
+                self._get_editor().display = False
             except NoMatches:
                 pass
-            # 첫 줄 텍스트 + ellipsis 표시
             first_line = (
                 self.sticker.content.split("\n")[0] if self.sticker.content else ""
             )
@@ -399,14 +418,17 @@ class StickerWidget(Widget):
         else:
             self.styles.height = self.sticker.size.height
             try:
-                editor = self._get_editor()
-                editor.display = True
+                self._get_editor().display = True
             except NoMatches:
                 pass
             try:
                 self.query_one("#minimized-label").remove()
             except NoMatches:
                 pass
+
+    def _set_minimized(self, minimized: bool) -> None:
+        self.sticker.minimized = minimized
+        self._sync_minimized_ui(minimized)
         try:
             board = self.app.query_one("StickerBoard")
             board.save_sticker(self.sticker)
@@ -462,4 +484,9 @@ class StickerWidget(Widget):
             event.stop()
 
         self._is_delete_pressed_once = False
-        self.styles.border = ("heavy", self.sticker.colors.border)
+        border_color = (
+            self._get_indicator()
+            if self.sticker.colors.border == "inherit"
+            else self.sticker.colors.border
+        )
+        self.styles.border = ("heavy", border_color)

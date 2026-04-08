@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sticker0 — Terminal Sticky Notes</title>
+  <meta name="description" content="A mouse-first TUI sticky notes app for your terminal. Drag, resize, and organize notes. Pairs naturally with tmux and terminal-based workflows like Claude Code.">
+  <meta name="keywords" content="terminal sticky notes, terminal sticker, TUI app, terminal notes, sticky notes CLI, tmux, terminal workflow, uv, stk, terminal post-it">
+  <link rel="canonical" href="https://lee-do-jun.github.io/sticker0/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lee-do-jun.github.io/sticker0/">
+  <meta property="og:title" content="sticker0 — Terminal Sticky Notes">
+  <meta property="og:description" content="A mouse-first TUI sticky notes app. Drag, resize, and organize notes — pairs naturally with tmux and Claude Code.">
+  <meta property="og:image" content="https://lee-do-jun.github.io/sticker0/assets/screenshot-1.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="sticker0 — Terminal Sticky Notes">
+  <meta name="twitter:description" content="A mouse-first TUI sticky notes app. Drag, resize, and organize notes — pairs naturally with tmux and Claude Code.">
+  <meta name="twitter:image" content="https://lee-do-jun.github.io/sticker0/assets/screenshot-1.png">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📌</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "sticker0",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS, Windows",
+    "description": "A mouse-first TUI sticky notes app for your terminal. Pairs naturally with tmux and terminal-based workflows.",
+    "url": "https://github.com/lee-do-jun/sticker0",
+    "downloadUrl": "https://pypi.org/project/sticker0/",
+    "softwareVersion": "0.5.0",
+    "license": "https://opensource.org/licenses/MIT",
+    "programmingLanguage": "Python",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Background layers -->
+  <div class="bg-grid"></div>
+  <div class="ambient-aura"></div>
+  <div class="cursor-glow"></div>
+
+  <main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="reveal">
+      <a class="hero-repo" href="https://github.com/lee-do-jun/sticker0" target="_blank" rel="noopener">
+        lee-do-jun / sticker0
+      </a>
+      <h1>
+        <span class="line typing-text" data-text="Sticky notes."></span>
+        <span class="line typing-text accent" data-text="In your terminal." data-delay="800"></span>
+      </h1>
+      <p class="hero-subtitle">
+        A mouse-first TUI app for sticky notes that live right in your terminal.
+        Drag, resize, color, and organize — pairs naturally with tmux and terminal-based workflows like Claude Code.
+      </p>
+      <div class="cli-install">
+        <span class="cli-prompt">❯</span>
+        <code>uv tool install sticker0</code>
+        <button type="button" onclick="copyInstall(this)">Copy</button>
+      </div>
+      <div class="hero-actions">
+        <a class="hero-cta" href="https://github.com/lee-do-jun/sticker0" target="_blank" rel="noopener">
+          <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+        <a class="hero-cta hero-cta-secondary" href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">
+          <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Get uv
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 // Preview -->
+  <section class="section">
+    <div class="container reveal">
+      <span class="section-badge">01 // Preview</span>
+      <h2 class="section-title">See it in action</h2>
+      <p class="section-desc">
+        Colorful sticky notes, right inside your terminal.
+        Create, drag, resize, and organize with pure mouse interactions.
+      </p>
+      <div class="preview-container">
+        <div class="preview-frame">
+          <div class="preview-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <img src="assets/screenshot-1.png" alt="sticker0 running in a terminal — multiple colorful sticky notes on a dark board" loading="lazy" width="1920" height="1080">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 // Features -->
+  <section class="section">
+    <div class="container reveal">
+      <span class="section-badge">02 // Features</span>
+      <h2 class="section-title">What it does</h2>
+      <p class="section-desc">
+        Everything you need for terminal-native note-taking. No keyboard shortcuts to memorize.
+      </p>
+      <div class="bento-grid">
+        <div class="bento-box">
+          <span class="bento-icon">🖱️</span>
+          <h3>Mouse-First</h3>
+          <p>Right-click context menus for everything. Create, delete, change colors — all from your mouse.</p>
+        </div>
+        <div class="bento-box">
+          <span class="bento-icon">📌</span>
+          <h3>Drag &amp; Resize</h3>
+          <p>Move stickers anywhere on the board. Resize from corners. Minimize with a double-click.</p>
+        </div>
+        <div class="bento-box">
+          <span class="bento-icon">🎨</span>
+          <h3>Themes &amp; Colors</h3>
+          <p>10+ sticker color presets and 6+ board themes built in. Add your own via config.</p>
+        </div>
+        <div class="bento-box">
+          <span class="bento-icon">📁</span>
+          <h3>Workspace Mode</h3>
+          <p>Per-project sticker boards with <code>stk -w</code>. Each project keeps its own notes and theme.</p>
+        </div>
+        <div class="bento-box">
+          <span class="bento-icon">💾</span>
+          <h3>Auto-Save</h3>
+          <p>Every edit saved instantly. Close and reopen — your notes are right where you left them.</p>
+        </div>
+        <div class="bento-box">
+          <span class="bento-icon">📋</span>
+          <h3>Clipboard</h3>
+          <p>Copy sticker text, paste from clipboard, or create new stickers from clipboard content.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 // Get Started -->
+  <section class="section">
+    <div class="container reveal">
+      <span class="section-badge">03 // Get Started</span>
+      <h2 class="section-title">One command away</h2>
+      <p class="section-desc">
+        <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">Install with uv</a> or pip. Requires Python 3.11+.
+      </p>
+      <div class="install-terminal">
+        <div class="term-header">
+          <div class="term-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="term-title">terminal</span>
+        </div>
+        <div class="term-body">
+          <div class="term-line">
+            <span class="term-prompt">❯</span>
+            <span class="term-cmd">uv tool install sticker0</span>
+          </div>
+          <div class="term-output">Installed 1 package</div>
+          <div class="term-line">
+            <span class="term-prompt">❯</span>
+            <span class="term-cmd">stk</span>
+            <span class="term-comment"># launch</span>
+          </div>
+          <div class="term-line dim">
+            <span class="term-prompt">❯</span>
+            <span class="term-cmd">stk -w</span>
+            <span class="term-comment"># workspace mode</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>
+        <a href="https://github.com/lee-do-jun/sticker0" target="_blank" rel="noopener">sticker0</a>
+        · MIT License ·
+        Pairs well with tmux &amp; Claude Code
+      </p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,13 +1,29 @@
 # tests/test_app.py
 import pytest
+from textual.widgets import TextArea
 from sticker0.app import Sticker0App
+from sticker0.config import AppConfig
 from sticker0.sticker import Sticker, StickerColors
 from sticker0.storage import StickerStorage
 
 
 @pytest.fixture
+def tmp_path_pair(tmp_path):
+    """(storage_dir, settings_path) 쌍: 테스트 격리용."""
+    return tmp_path, tmp_path / "settings.toml"
+
+
+@pytest.fixture
 def tmp_storage(tmp_path):
     return StickerStorage(data_dir=tmp_path)
+
+
+@pytest.fixture
+def tmp_config(tmp_path):
+    return AppConfig.load(
+        path=tmp_path / ".stkrc",
+        settings_path=tmp_path / "settings.toml",
+    )
 
 
 @pytest.mark.asyncio
@@ -49,7 +65,6 @@ async def test_sticker_drag_moves_position(tmp_storage):
 
 @pytest.mark.asyncio
 async def test_textarea_always_present(tmp_storage):
-    from textual.widgets import TextArea
     s = Sticker(content="hello")
     tmp_storage.save(s)
     app = Sticker0App(storage=tmp_storage)
@@ -193,24 +208,13 @@ async def test_context_menu_delete_removes_sticker(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_press_n_creates_sticker(tmp_storage):
-    from sticker0.widgets.sticker_widget import StickerWidget
-    app = Sticker0App(storage=tmp_storage)
-    async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.press("n")
-        await pilot.pause(0.1)
-        assert len(app.query(StickerWidget)) == 1
-        assert len(tmp_storage.load_all()) == 1
-
-
-@pytest.mark.asyncio
-async def test_preset_change_via_context_menu(tmp_storage):
+async def test_preset_change_via_context_menu(tmp_storage, tmp_config):
     """우클릭 → 프리셋 변경 → Banana 선택 → 색상 변경 확인."""
     from sticker0.widgets.sticker_widget import StickerWidget
     from sticker0.widgets.preset_picker import PresetPicker
     s = Sticker(title="Preset test")
     tmp_storage.save(s)
-    app = Sticker0App(storage=tmp_storage)
+    app = Sticker0App(storage=tmp_storage, config=tmp_config)
     async with app.run_test(size=(120, 40)) as pilot:
         widget = app.query_one(StickerWidget)
         await pilot.click(widget, button=3, offset=(5, 2))
@@ -256,22 +260,6 @@ async def test_app_has_no_header_or_footer(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_focused_sticker_delete_with_d_key(tmp_storage):
-    from sticker0.widgets.sticker_widget import StickerWidget
-    s = Sticker(title="Press d")
-    tmp_storage.save(s)
-    app = Sticker0App(storage=tmp_storage)
-    async with app.run_test(size=(120, 40)) as pilot:
-        widget = app.query_one(StickerWidget)
-        widget.focus()
-        await pilot.pause(0.1)
-        await pilot.press("d")
-        await pilot.pause(0.1)
-        assert len(app.query(StickerWidget)) == 0
-        assert tmp_storage.load_all() == []
-
-
-@pytest.mark.asyncio
 async def test_empty_board_right_click_shows_board_menu(tmp_storage):
     from sticker0.widgets.board_menu import BoardMenu
     app = Sticker0App(storage=tmp_storage)
@@ -299,6 +287,47 @@ async def test_board_menu_create_adds_sticker(tmp_storage):
 
 
 @pytest.mark.asyncio
+async def test_board_menu_new_from_clipboard_adds_sticker_with_content(tmp_storage):
+    from unittest.mock import patch
+
+    from sticker0.widgets.board_menu import BoardMenu
+
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        with patch(
+            "sticker0.widgets.board.read_os_clipboard_text",
+            return_value="pasted note",
+        ):
+            await pilot.click(menu.query_one("#board-new-from-clipboard"))
+            await pilot.pause(0.1)
+    loaded = tmp_storage.load_all()
+    assert len(loaded) == 1
+    assert loaded[0].content == "pasted note"
+
+
+@pytest.mark.asyncio
+async def test_board_menu_new_from_clipboard_noop_when_clipboard_empty(tmp_storage):
+    from unittest.mock import patch
+
+    from sticker0.widgets.board_menu import BoardMenu
+
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        with patch("sticker0.widgets.board.read_os_clipboard_text", return_value=None):
+            await pilot.click(menu.query_one("#board-new-from-clipboard"))
+            await pilot.pause(0.1)
+    assert tmp_storage.load_all() == []
+
+
+@pytest.mark.asyncio
 async def test_board_menu_quit_exits_app(tmp_storage):
     from sticker0.widgets.board_menu import BoardMenu
     app = Sticker0App(storage=tmp_storage)
@@ -313,11 +342,11 @@ async def test_board_menu_quit_exits_app(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_board_theme_change(tmp_storage):
+async def test_board_theme_change(tmp_storage, tmp_config):
     """보드 테마 변경 → 배경색 + indicator 변경 확인."""
     from sticker0.widgets.board_menu import BoardMenu
     from sticker0.widgets.theme_picker import ThemePicker
-    app = Sticker0App(storage=tmp_storage)
+    app = Sticker0App(storage=tmp_storage, config=tmp_config)
     async with app.run_test(size=(120, 40)) as pilot:
         board = app.query_one("StickerBoard")
         await pilot.click(board, button=3, offset=(60, 20))
@@ -331,6 +360,31 @@ async def test_board_theme_change(tmp_storage):
         await pilot.pause(0.1)
         assert board.board_bg == "#1e1e22"
         assert board.indicator == "#d4d4d8"
+
+
+@pytest.mark.asyncio
+async def test_sticker_inherit_uses_board_indicator(tmp_storage, tmp_config):
+    """border/text가 inherit이면 스티커 위젯 색은 보드 indicator로 해석된다."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from textual.color import Color
+
+    tmp_config.board_theme.indicator = "#aabbcc"
+    s = Sticker(
+        colors=StickerColors(
+            border="inherit",
+            text="inherit",
+            area="transparent",
+        ),
+    )
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage, config=tmp_config)
+    async with app.run_test(size=(120, 40)):
+        widget = app.query_one(StickerWidget)
+        board = app.query_one("StickerBoard")
+        expected = Color.parse("#aabbcc")
+        assert board.indicator == "#aabbcc"
+        assert widget.styles.color == expected
+        assert widget.styles.border_top[1] == expected
 
 
 @pytest.mark.asyncio
@@ -349,6 +403,21 @@ async def test_minimize_via_context_menu(tmp_storage):
         await pilot.click(menu.query_one("#menu-minimize"))
         await pilot.pause(0.1)
         assert widget.sticker.minimized is True
+
+
+@pytest.mark.asyncio
+async def test_minimized_sticker_load_hides_editor(tmp_storage):
+    """저장된 최소화 스티커 기동 시 TextArea는 숨기고 요약 라벨만 쓴다(스크롤바 유령 방지)."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    s = Sticker(content="line1\nline2\nline3", minimized=True)
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)):
+        widget = app.query_one(StickerWidget)
+        editor = widget.query_one(TextArea)
+        assert editor.display is False
+        widget.query_one("#minimized-label")
 
 
 @pytest.mark.asyncio
@@ -431,16 +500,192 @@ async def test_popup_menus_close_on_left_click_outside(tmp_storage):
 
 
 @pytest.mark.asyncio
-async def test_new_sticker_uses_theme_default_colors(tmp_storage):
-    """새 스티커 색은 로드된 config.board_theme 스티커 기본값과 일치."""
+async def test_context_menu_copy_writes_clipboard(tmp_storage):
+    from unittest.mock import patch
+
+    from sticker0.widgets.context_menu import ContextMenu
     from sticker0.widgets.sticker_widget import StickerWidget
 
+    s = Sticker(content="note body")
+    tmp_storage.save(s)
     app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        with patch("sticker0.widgets.board.write_clipboard_from_app") as mock_write:
+            await pilot.click(menu.query_one("#menu-copy"))
+            await pilot.pause(0.1)
+        mock_write.assert_called_once()
+        assert mock_write.call_args[0][1] == "note body"
+
+
+@pytest.mark.asyncio
+async def test_context_menu_paste_replaces_content(tmp_storage):
+    from unittest.mock import patch
+
+    from sticker0.widgets.context_menu import ContextMenu
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    s = Sticker(content="old")
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        with patch(
+            "sticker0.widgets.board.read_os_clipboard_text",
+            return_value="from-clip",
+        ):
+            await pilot.click(menu.query_one("#menu-paste"))
+            await pilot.pause(0.1)
+        assert widget.sticker.content == "from-clip"
+        assert widget.query_one(TextArea).text == "from-clip"
+        loaded = tmp_storage.load(s.id)
+        assert loaded.content == "from-clip"
+
+
+@pytest.mark.asyncio
+async def test_context_menu_paste_noop_when_clipboard_empty(tmp_storage):
+    from unittest.mock import patch
+
+    from sticker0.widgets.context_menu import ContextMenu
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    s = Sticker(content="unchanged")
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        menu = app.query_one(ContextMenu)
+        with patch("sticker0.widgets.board.read_os_clipboard_text", return_value=None):
+            await pilot.click(menu.query_one("#menu-paste"))
+            await pilot.pause(0.1)
+        assert widget.sticker.content == "unchanged"
+
+
+@pytest.mark.asyncio
+async def test_border_change_via_context_menu(tmp_storage, tmp_config):
+    """우클릭 → Change Border → round 선택 → border 변경 확인."""
+    from sticker0.widgets.sticker_widget import StickerWidget
+    from sticker0.widgets.border_picker import BorderPicker
+    s = Sticker(title="Border test", line="solid")
+    tmp_storage.save(s)
+    app = Sticker0App(storage=tmp_storage, config=tmp_config)
+    async with app.run_test(size=(120, 40)) as pilot:
+        widget = app.query_one(StickerWidget)
+        await pilot.click(widget, button=3, offset=(5, 2))
+        await pilot.pause(0.1)
+        from sticker0.widgets.context_menu import ContextMenu
+        menu = app.query_one(ContextMenu)
+        await pilot.click(menu.query_one("#menu-border"))
+        await pilot.pause(0.1)
+        assert len(app.query(BorderPicker)) == 1
+        picker = app.query_one(BorderPicker)
+        await pilot.click(picker.query_one("#border-round"))
+        await pilot.pause(0.1)
+        loaded = tmp_storage.load(s.id)
+        assert loaded.line == "round"
+
+
+@pytest.mark.asyncio
+async def test_new_sticker_uses_theme_default_line(tmp_storage, tmp_config):
+    """새 스티커의 line은 config.board_theme.sticker_line과 일치."""
+    from sticker0.widgets.board_menu import BoardMenu
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    tmp_config.board_theme.sticker_line = "heavy"
+    app = Sticker0App(storage=tmp_storage, config=tmp_config)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        await pilot.click(menu.query_one("#board-create"))
+        await pilot.pause(0.1)
+        widget = app.query_one(StickerWidget)
+        assert widget.sticker.line == "heavy"
+
+
+@pytest.mark.asyncio
+async def test_new_sticker_uses_theme_default_colors(tmp_storage, tmp_config):
+    """새 스티커 색은 로드된 config.board_theme 스티커 기본값과 일치."""
+    from sticker0.widgets.board_menu import BoardMenu
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    app = Sticker0App(storage=tmp_storage, config=tmp_config)
     bt = app.config.board_theme
     async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.press("n")
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        await pilot.click(menu.query_one("#board-create"))
         await pilot.pause(0.1)
         widget = app.query_one(StickerWidget)
         assert widget.sticker.colors.border == bt.sticker_border
         assert widget.sticker.colors.text == bt.sticker_text
         assert widget.sticker.colors.area == bt.sticker_area
+
+
+@pytest.mark.asyncio
+async def test_workspace_mode_uses_local_sticker0_dir(tmp_path):
+    """workspace 모드에서 .sticker0/ 폴더에 스티커와 설정이 저장된다."""
+    from sticker0.widgets.board_menu import BoardMenu
+    from sticker0.widgets.sticker_widget import StickerWidget
+
+    data_dir = tmp_path / ".sticker0"
+    data_dir.mkdir()
+    config = AppConfig.load(
+        path=tmp_path / ".stkrc",
+        settings_path=data_dir / "settings.toml",
+    )
+    storage = StickerStorage(data_dir=data_dir)
+    app = Sticker0App(storage=storage, config=config)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        await pilot.click(menu.query_one("#board-create"))
+        await pilot.pause(0.1)
+        assert len(app.query(StickerWidget)) == 1
+
+    saved_files = list(data_dir.glob("*.json"))
+    assert len(saved_files) == 1
+
+
+@pytest.mark.asyncio
+async def test_workspace_mode_settings_toml_independent(tmp_path):
+    """workspace의 settings.toml은 글로벌과 독립적으로 관리된다."""
+    from sticker0.widgets.board_menu import BoardMenu
+    from sticker0.widgets.theme_picker import ThemePicker
+
+    data_dir = tmp_path / ".sticker0"
+    data_dir.mkdir()
+    config = AppConfig.load(
+        path=tmp_path / ".stkrc",
+        settings_path=data_dir / "settings.toml",
+    )
+    storage = StickerStorage(data_dir=data_dir)
+    app = Sticker0App(storage=storage, config=config)
+    async with app.run_test(size=(120, 40)) as pilot:
+        board = app.query_one("StickerBoard")
+        await pilot.click(board, button=3, offset=(60, 20))
+        await pilot.pause(0.1)
+        menu = app.query_one(BoardMenu)
+        await pilot.click(menu.query_one("#board-theme"))
+        await pilot.pause(0.1)
+        picker = app.query_one(ThemePicker)
+        await pilot.click(picker.query_one("#theme-Ivory"))
+        await pilot.pause(0.1)
+
+    settings_file = data_dir / "settings.toml"
+    assert settings_file.exists()
+    content = settings_file.read_text(encoding="utf-8")
+    assert "[theme]" in content

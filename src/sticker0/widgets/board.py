@@ -1,15 +1,17 @@
 # src/sticker0/widgets/board.py
 from __future__ import annotations
+from textual.containers import Container
 from textual.widget import Widget
 from textual.app import ComposeResult
 from textual.events import MouseDown, MouseEvent, MouseUp, Resize
 from sticker0.config import AppConfig
 from sticker0.sticker import Sticker, StickerColors, StickerSize
 from sticker0.storage import StickerStorage
+from sticker0.system_clipboard import read_os_clipboard_text, write_clipboard_from_app
 from sticker0.widgets.sticker_widget import StickerWidget
 
 
-class StickerBoard(Widget):
+class StickerBoard(Container):
     DEFAULT_CSS = """
     StickerBoard {
         width: 1fr;
@@ -46,7 +48,13 @@ class StickerBoard(Widget):
     def save_sticker(self, sticker: Sticker) -> None:
         self.storage.save(sticker)
 
-    def add_new_sticker(self, x: int | None = None, y: int | None = None) -> None:
+    def add_new_sticker(
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        *,
+        content: str | None = None,
+    ) -> None:
         cfg = self.config
         bt = cfg.board_theme
         colors = StickerColors(
@@ -55,7 +63,9 @@ class StickerBoard(Widget):
             area=bt.sticker_area,
         )
         sticker = Sticker(
+            content=content if content is not None else "",
             colors=colors,
+            line=bt.sticker_line,
             size=StickerSize(
                 width=cfg.defaults.width,
                 height=cfg.defaults.height,
@@ -89,6 +99,7 @@ class StickerBoard(Widget):
         from sticker0.widgets.board_menu import BoardMenu
         from sticker0.widgets.preset_picker import PresetPicker
         from sticker0.widgets.theme_picker import ThemePicker
+        from sticker0.widgets.border_picker import BorderPicker
         for w in self.query(ContextMenu):
             w.remove()
         for w in self.query(BoardMenu):
@@ -97,6 +108,8 @@ class StickerBoard(Widget):
             w.remove()
         for w in self.query(ThemePicker):
             w.remove()
+        for w in self.query(BorderPicker):
+            w.remove()
 
     def _pointer_is_on_popup_layer(self, event: MouseEvent) -> bool:
         """포인터가 메뉴/피커(또는 그 자식) 위에 있는지. screen 좌표로 히트 테스트."""
@@ -104,9 +117,10 @@ class StickerBoard(Widget):
         from sticker0.widgets.board_menu import BoardMenu
         from sticker0.widgets.preset_picker import PresetPicker
         from sticker0.widgets.theme_picker import ThemePicker
+        from sticker0.widgets.border_picker import BorderPicker
         from textual.errors import NoWidget
 
-        popup_types = (ContextMenu, BoardMenu, PresetPicker, ThemePicker)
+        popup_types = (ContextMenu, BoardMenu, PresetPicker, ThemePicker, BorderPicker)
         w: Widget | None
         try:
             w, _ = self.screen.get_widget_at(event.screen_x, event.screen_y)
@@ -133,7 +147,7 @@ class StickerBoard(Widget):
         return False
 
     def on_mouse_down(self, event: MouseDown) -> None:
-        """빈 보드 클릭 시 TextArea 포커스 해제 → 앱 단축키(n/q/d)가 동작하도록."""
+        """빈 보드 클릭 시 TextArea 포커스 해제 → 앱 단축키(n)가 동작하도록."""
         if event.button != 1:
             return
         if self._pointer_is_on_popup_layer(event):
@@ -168,6 +182,7 @@ class StickerBoard(Widget):
         from sticker0.widgets.preset_picker import PresetPicker
         from sticker0.widgets.popup_geometry import apply_clamp_popup_to_parent
         from sticker0.widgets.theme_picker import ThemePicker
+        from sticker0.widgets.border_picker import BorderPicker
 
         for widget in self.query(StickerWidget):
             widget._clamp_position()
@@ -176,12 +191,27 @@ class StickerBoard(Widget):
             BoardMenu,
             PresetPicker,
             ThemePicker,
+            BorderPicker,
         ):
             for w in self.query(popup_cls):
                 apply_clamp_popup_to_parent(w)
 
     def on_context_menu_menu_action(self, message) -> None:
-        if message.action == "delete":
+        if message.action == "copy":
+            for widget in self.query(StickerWidget):
+                if widget.sticker.id == message.sticker_id:
+                    write_clipboard_from_app(self.app, widget.sticker.content)
+                    break
+        elif message.action == "paste":
+            clip = read_os_clipboard_text()
+            if clip is None:
+                return
+            for widget in self.query(StickerWidget):
+                if widget.sticker.id == message.sticker_id:
+                    widget.replace_body_text(clip)
+                    self.save_sticker(widget.sticker)
+                    break
+        elif message.action == "delete":
             self.delete_sticker(message.sticker_id)
         elif message.action == "preset":
             from sticker0.widgets.preset_picker import PresetPicker
@@ -193,6 +223,17 @@ class StickerBoard(Widget):
                 indicator=self.indicator,
                 board_background=self.board_bg,
                 custom_presets=self.config.sticker_presets,
+            )
+            self.mount(picker)
+        elif message.action == "border":
+            from sticker0.widgets.border_picker import BorderPicker
+            self.close_all_menus()
+            picker = BorderPicker(
+                sticker_id=message.sticker_id,
+                x=message.x,
+                y=message.y,
+                indicator=self.indicator,
+                board_background=self.board_bg,
             )
             self.mount(picker)
         elif message.action == "minimize":
@@ -207,6 +248,11 @@ class StickerBoard(Widget):
     def on_board_menu_menu_action(self, message) -> None:
         if message.action == "create":
             self.add_new_sticker(x=message.x, y=message.y)
+        elif message.action == "new_from_clipboard":
+            clip = read_os_clipboard_text()
+            if clip is None:
+                return
+            self.add_new_sticker(x=message.x, y=message.y, content=clip)
         elif message.action == "theme":
             from sticker0.widgets.theme_picker import ThemePicker
             self.close_all_menus()
@@ -233,6 +279,17 @@ class StickerBoard(Widget):
         bt.sticker_border = message.colors.border
         bt.sticker_text = message.colors.text
         bt.sticker_area = message.colors.area
+        self.config.save_board_theme()
+
+    def on_border_picker_border_selected(self, message) -> None:
+        for widget in self.query(StickerWidget):
+            if widget.sticker.id == message.sticker_id:
+                widget.sticker.line = message.line
+                widget._apply_sticker_styles()
+                widget.refresh()
+                self.storage.save(widget.sticker)
+                break
+        self.config.board_theme.sticker_line = message.line
         self.config.save_board_theme()
 
     def on_theme_picker_theme_selected(self, message) -> None:
